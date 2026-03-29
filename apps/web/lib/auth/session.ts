@@ -1,20 +1,43 @@
 import { cookies } from 'next/headers';
 
-const COOKIE_NAME = 'auth_token';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 dias
+const ACCESS_COOKIE   = 'auth_token';
+const REFRESH_COOKIE  = 'refresh_token';
 
-export async function setSession(token: string) {
+const ACCESS_MAX_AGE  = Number(process.env.ACCESS_TOKEN_MAX_AGE ?? 604800); // default 7d
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+
+export async function setSession(accessToken: string, refreshToken: string) {
   const store = await cookies();
-  store.set(COOKIE_NAME, token, {
+
+  store.set(ACCESS_COOKIE, accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: ACCESS_MAX_AGE,
+    path: '/',
+  });
+
+  store.set(REFRESH_COOKIE, refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: REFRESH_MAX_AGE,
     path: '/',
   });
 }
 
+export async function clearSession() {
+  const store = await cookies();
+  store.delete(ACCESS_COOKIE);
+  store.delete(REFRESH_COOKIE);
+}
+
 export async function getSession(): Promise<string | null> {
   const store = await cookies();
-  return store.get(COOKIE_NAME)?.value ?? null;
+  return store.get(ACCESS_COOKIE)?.value ?? null;
+}
+
+export async function getRefreshToken(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(REFRESH_COOKIE)?.value ?? null;
 }

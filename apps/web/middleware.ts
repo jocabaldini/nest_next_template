@@ -1,27 +1,115 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getLocaleFromRequest, LOCALE_COOKIE } from './lib/i18n';
+import { getApiUrl } from './lib/api/config';
+import { NEST_ROUTES } from './lib/api/routes';
 
 const PUBLIC_PATHS = ['/login'];
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+const ACCESS_COOKIE  = 'auth_token';
+const REFRESH_COOKIE = 'refresh_token';
+const ACCESS_MAX_AGE = Number(process.env.ACCESS_TOKEN_MAX_AGE ?? 604800); // fallback 7d
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
 
-  const isPublic = PUBLIC_PATHS.some(
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
+}
 
-  const token = req.cookies.get('auth_token')?.value;
+async function tryRefresh(
+  req: NextRequest
+): Promise<{ accessToken: string; refreshToken: string } | null> {
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
+  if (!refreshToken) return null;
 
-  if (isPublic && token) {
+  try {
+    const res = await fetch(`${getApiUrl()}${NEST_ROUTES.auth.refresh}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      cache: 'no-store',
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data?.accessToken || !data?.refreshToken) return null;
+
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function applyTokensToResponse(
+  response: NextResponse,
+  accessToken: string,
+  refreshToken: string,
+  isProd: boolean
+) {
+  const base = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax' as const,
+    path: '/',
+  };
+
+  response.cookies.set(ACCESS_COOKIE, accessToken, {
+    ...base,
+    maxAge: ACCESS_MAX_AGE,
+  });
+
+  response.cookies.set(REFRESH_COOKIE, refreshToken, {
+    ...base,
+    maxAge: REFRESH_MAX_AGE,
+  });
+}
+
+function clearTokensFromResponse(response: NextResponse) {
+  response.cookies.delete(ACCESS_COOKIE);
+  response.cookies.delete(REFRESH_COOKIE);
+}
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const isProd = process.env.NODE_ENV === 'production';
+  const isPublic = isPublicPath(pathname);
+
+  const accessToken  = req.cookies.get(ACCESS_COOKIE)?.value;
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
+
+  // Usuário autenticado tentando acessar rota pública (ex: /login)
+  if (isPublic && accessToken) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
-  if (!isPublic && !token) {
-    return NextResponse.redirect(new URL('/login', req.url));
+  // Rota protegida sem access token
+  if (!isPublic && !accessToken) {
+    // Tenta renovar via refresh token antes de redirecionar
+    if (refreshToken) {
+      const tokens = await tryRefresh(req);
+
+      if (tokens) {
+        // Renovou com sucesso — segue para a página com os novos cookies
+        const response = NextResponse.next();
+        applyTokensToResponse(response, tokens.accessToken, tokens.refreshToken, isProd);
+        setLocaleCookie(req, response);
+        return response;
+      }
+    }
+
+    // Refresh inválido ou inexistente — limpa e redireciona
+    const response = NextResponse.redirect(new URL('/login', req.url));
+    clearTokensFromResponse(response);
+    return response;
   }
 
   const response = NextResponse.next();
+  setLocaleCookie(req, response);
+  return response;
+}
 
+function setLocaleCookie(req: NextRequest, response: NextResponse) {
   if (!req.cookies.get(LOCALE_COOKIE)) {
     const locale = getLocaleFromRequest(req);
     response.cookies.set(LOCALE_COOKIE, locale, {
@@ -29,8 +117,6 @@ export function middleware(req: NextRequest) {
       sameSite: 'lax',
     });
   }
-
-  return response;
 }
 
 export const config = {

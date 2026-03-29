@@ -18,7 +18,7 @@ export class UsersService {
       data: {
         email: dto.email,
         name: dto.name,
-        passwordHash, // se você não renomeou no schema, troque para: password: passwordHash
+        passwordHash,
       },
       select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
     });
@@ -46,6 +46,28 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  // ─── Novos métodos para refresh token ────────────────────────────────────
+
+  async findById(id: string) {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async updateRefreshToken(id: string, refreshTokenHash: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { refreshTokenHash },
+    });
+  }
+
+  async clearRefreshToken(id: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { refreshTokenHash: null },
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   async update(id: string, dto: UpdateUserDto) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Usuário não encontrado');
@@ -58,7 +80,7 @@ export class UsersService {
       data: {
         email: dto.email,
         name: dto.name,
-        ...(passwordHash ? { passwordHash } : {}), // se não renomeou, use { password: passwordHash }
+        ...(passwordHash ? { passwordHash } : {}),
       },
       select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
     });
