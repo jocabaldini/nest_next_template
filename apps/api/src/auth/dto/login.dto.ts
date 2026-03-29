@@ -1,10 +1,11 @@
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { i18nValidationMessage } from 'nestjs-i18n';
 
 export class LoginDto {
-  @IsEmail({}, { message: 'Invalid e-mail' })
+  @IsEmail({}, { message: i18nValidationMessage('validation.email') })
   email: string;
 
-  @IsString()
-  @MinLength(1, { message: 'Password is required' })
+  @IsString({ message: i18nValidationMessage('validation.string') })
+  @MinLength(8, { message: i18nValidationMessage('validation.minLength') })
   password: string;
 }

@@ -1,11 +1,11 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { I18nValidationPipe, I18nValidationExceptionFilter } from 'nestjs-i18n';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 function parseCorsOrigins(value: string | undefined): string[] {
-  if (!value) return ['http://localhost:3000']; // fallback dev
+  if (!value) return ['http://localhost:3000']; // dev fallback
 
   const trimmed = value.trim();
   if (trimmed === '*') {
@@ -24,32 +24,34 @@ async function bootstrap() {
   app.set('trust proxy', 1);
   app.use(helmet());
 
-  // Faz o Nest reagir a SIGINT/SIGTERM e disparar OnModuleDestroy nos providers
+  // Triggers OnModuleDestroy on SIGINT/SIGTERM
   app.enableShutdownHooks();
 
   const corsOrigin = parseCorsOrigins(process.env.CORS_ORIGIN);
 
   app.enableCors({
     origin: (origin, cb) => {
-      // Sem Origin (curl/server-to-server/healthcheck) -> permite
+      // No Origin header (curl / server-to-server / healthcheck) -> allow
       if (!origin) return cb(null, true);
-
-      // Se não configurou CORS_ORIGIN, permita apenas localhost em dev (via parseCorsOrigins)
       return cb(null, corsOrigin.includes(origin));
     },
-    credentials: false, // <- importante para Bearer token
+    credentials: false, // Bearer token — credentials not needed
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // (Recomendado para DTOs com class-validator/class-transformer)
+  // Replaces the default ValidationPipe — keeps whitelist/forbid/transform
+  // and adds i18n support for DTO validation messages
   app.useGlobalPipes(
-    new ValidationPipe({
+    new I18nValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
     }),
   );
+
+  // Formats validation errors using the language files
+  app.useGlobalFilters(new I18nValidationExceptionFilter());
 
   const rawPort = process.env.PORT ?? '3001';
   const port = Number(rawPort);

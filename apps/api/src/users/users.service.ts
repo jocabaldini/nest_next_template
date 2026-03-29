@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -6,15 +7,20 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly i18n: I18nService,
+  ) {}
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, lang: string) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (existing) throw new ConflictException('Email já está em uso');
+    if (existing) {
+      throw new ConflictException(this.i18n.t('users.email_in_use', { lang }));
+    }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.prisma.user.create({
+    return this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
@@ -22,8 +28,6 @@ export class UsersService {
       },
       select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
     });
-
-    return user;
   }
 
   async findAll() {
@@ -33,20 +37,22 @@ export class UsersService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, lang: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
     });
-    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    if (!user) {
+      throw new NotFoundException(this.i18n.t('users.not_found', { lang }));
+    }
+
     return user;
   }
 
   async findByEmailWithHash(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }
-
-  // ─── Novos métodos para refresh token ────────────────────────────────────
 
   async findById(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
@@ -66,11 +72,11 @@ export class UsersService {
     });
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-
-  async update(id: string, dto: UpdateUserDto) {
+  async update(id: string, dto: UpdateUserDto, lang: string) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('Usuário não encontrado');
+    if (!existing) {
+      throw new NotFoundException(this.i18n.t('users.not_found', { lang }));
+    }
 
     let passwordHash: string | undefined;
     if (dto.password) passwordHash = await bcrypt.hash(dto.password, 10);
@@ -86,9 +92,11 @@ export class UsersService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, lang: string) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('Usuário não encontrado');
+    if (!existing) {
+      throw new NotFoundException(this.i18n.t('users.not_found', { lang }));
+    }
 
     await this.prisma.user.delete({ where: { id } });
     return { ok: true };
