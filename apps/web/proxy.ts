@@ -70,7 +70,7 @@ function clearTokensFromResponse(response: NextResponse) {
   response.cookies.delete(REFRESH_COOKIE);
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isProd = process.env.NODE_ENV === 'production';
   const isPublic = isPublicPath(pathname);
