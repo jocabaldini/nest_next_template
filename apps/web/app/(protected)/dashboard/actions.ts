@@ -9,16 +9,21 @@ export async function getMe() {
 
   if (!token) return null;
 
-  const res = await fetch(`${process.env.API_URL}/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    cache: 'no-store',
-  });
+  try {
+    const res = await fetch(`${process.env.API_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: 'no-store',
+    });
 
-  if (!res.ok) return null;
+    if (!res.ok) return null;
 
-  return res.json();
+    return res.json();
+  } catch {
+    // API is unreachable (e.g. not yet started or network error)
+    return null;
+  }
 }
 
 export async function logoutAction() {

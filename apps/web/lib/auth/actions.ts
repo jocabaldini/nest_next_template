@@ -6,25 +6,35 @@ import { setSession, clearSession, getSession } from './session';
 import { NEST_ROUTES } from '@/lib/api/routes';
 
 export async function loginAction(email: string, password: string) {
-  const res = await fetch(`${getApiUrl()}${NEST_ROUTES.auth.login}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-    cache: 'no-store',
-  });
+  try {
+    const res = await fetch(`${getApiUrl()}${NEST_ROUTES.auth.login}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      cache: 'no-store',
+    });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    const message = body?.message ?? 'Credenciais inválidas';
-    throw new Error(message);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const message = body?.message ?? 'Credenciais inválidas';
+      throw new Error(message);
+    }
+
+    const { accessToken, refreshToken } = await res.json();
+    await setSession(accessToken, refreshToken);
+  } catch (err) {
+    // Re-throw known errors (invalid credentials, etc.)
+    if (err instanceof Error && err.message !== 'fetch failed') {
+      throw err;
+    }
+
+    // API is unreachable
+    throw new Error('Serviço indisponível. Tente novamente em instantes.');
   }
-
-  const { accessToken, refreshToken } = await res.json();
-  await setSession(accessToken, refreshToken);
 }
 
 export async function logoutAction() {
-  // Notifica o backend para invalidar o refresh token no banco
+  // Notify backend to invalidate the refresh token in the database
   try {
     const token = await getSession();
 
@@ -39,7 +49,7 @@ export async function logoutAction() {
       });
     }
   } catch {
-    // Segue o logout local mesmo se o backend falhar
+    // Continue with local logout even if backend call fails
   }
 
   await clearSession();
