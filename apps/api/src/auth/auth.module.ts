@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
+import { LoginThrottlerGuard } from './login-throttler.guard';
 
 @Module({
   imports: [
@@ -23,14 +24,11 @@ import { JwtStrategy } from './jwt.strategy';
           ? Number(rawExpiresIn)
           : (rawExpiresIn as StringValue);
 
-        return {
-          secret,
-          signOptions: { expiresIn },
-        };
+        return { secret, signOptions: { expiresIn } };
       },
     }),
   ],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, LoginThrottlerGuard], // ✅ adicionado
   controllers: [AuthController],
 })
 export class AuthModule {}
