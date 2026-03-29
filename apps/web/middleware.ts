@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { getLocaleFromRequest, LOCALE_COOKIE } from './lib/i18n';
 
 const PUBLIC_PATHS = ['/login'];
 
@@ -11,28 +12,27 @@ export function middleware(req: NextRequest) {
 
   const token = req.cookies.get('auth_token')?.value;
 
-  // Authenticated user trying to access a public page → redirect to dashboard
   if (isPublic && token) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
-  // Unauthenticated user trying to access a protected route → redirect to login
   if (!isPublic && !token) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  if (!req.cookies.get(LOCALE_COOKIE)) {
+    const locale = getLocaleFromRequest(req);
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      path: '/',
+      sameSite: 'lax',
+    });
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Apply middleware to all routes EXCEPT:
-     * - _next/static  (static assets)
-     * - _next/image   (image optimization)
-     * - favicon.ico
-     * - /api/*        (proxy routes — auth is handled by Nest)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|api/).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)',],
 };

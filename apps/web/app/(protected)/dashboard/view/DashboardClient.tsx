@@ -1,21 +1,15 @@
-import Navbar from '../../_components/Navbar';
 import type { Dictionary } from '@/lib/i18n';
 
 interface DashboardClientProps {
-  userName: string;
-  dict: Dictionary;
+  dict: Dictionary['dashboard'];
 }
 
-export default function DashboardClient({ userName, dict }: DashboardClientProps) {
+export default function DashboardClient({ dict }: DashboardClientProps) {
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col">
-      <Navbar userName={userName} dict={dict['navbar']} />
-
-      <main className="flex flex-1 items-center justify-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-gray-200">
-          {dict.dashboard.title}
-        </h1>
-      </main>
-    </div>
+    <main className="flex flex-1 items-center justify-center min-h-screen bg-gray-950 text-white">
+      <h1 className="text-3xl font-semibold tracking-tight text-gray-200">
+        {dict.title}
+      </h1>
+    </main>
   );
 }

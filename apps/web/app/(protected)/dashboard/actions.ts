@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export async function getMe() {
   const cookieStore = await cookies();
@@ -18,4 +19,10 @@ export async function getMe() {
   if (!res.ok) return null;
 
   return res.json();
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete('auth_token');
+  redirect('/login');
 }
