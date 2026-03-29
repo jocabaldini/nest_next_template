@@ -1,0 +1,43 @@
+{
+  "name": "school-system",
+  "author": "João Carlos de Souza Baldini",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Multi-tenant school management system (web) built with NestJS, Next.js, Prisma, and Postgres.",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "packageManager": "npm@10.8.2",
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm -w apps/api run start:dev\" \"npm -w apps/web run dev\"",
+    "dev:api": "npm -w apps/api run start:dev",
+    "dev:web": "npm -w apps/web run dev",
+
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "npm -w apps/api run build --if-present",
+    "build:web": "npm -w apps/web run build --if-present",
+
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:api": "npm -w apps/api run lint --if-present",
+    "lint:web": "npm -w apps/web run lint --if-present",
+
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm -w apps/api run test --if-present",
+    "test:web": "npm -w apps/web run test --if-present",
+
+    "db:studio": "npm -w apps/api exec prisma studio",
+    "db:reset": "npm -w apps/api exec prisma migrate reset",
+    "db:generate": "npm -w apps/api run prisma:generate",
+    "db:deploy": "npm -w apps/api run prisma:migrate:deploy",
+    "db:migrate": "npm -w apps/api run prisma:migrate:dev",
+    "db:seed": "npm -w apps/api run prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
