@@ -1,12 +1,9 @@
-// apps/web/app/api/[...path]/route.ts
 import { getApiUrl } from '@/lib/api/config';
 
 type Params = { path?: string[] };
 
-// Não proxiar caminhos "do Next" (se você criar rotas internas depois)
 const RESERVED_PREFIXES = new Set([
   'internal',
-  'auth',
   'webhooks',
 ]);
 
@@ -37,7 +34,7 @@ function isReserved(path: string[]) {
 }
 
 function buildTargetUrl(path: string[], reqUrl: string) {
-  const base = getApiUrl(); // ex: http://localhost:3001
+  const base = getApiUrl();
   const url = new URL(reqUrl);
   const cleanPath = path.join('/');
   return `${base}/${cleanPath}${url.search}`;
@@ -62,8 +59,6 @@ function filterResponseHeaders(incoming: Headers) {
   incoming.forEach((value, key) => {
     const lower = key.toLowerCase();
     if (HOP_BY_HOP_HEADERS.has(lower)) return;
-
-    // Em geral é ok repassar; Next lida bem com set-cookie em route handlers.
     headers.append(key, value);
   });
 
@@ -84,10 +79,8 @@ async function proxy(req: Request, ctx: { params: Promise<Params> }) {
   }
 
   const target = buildTargetUrl(path, req.url);
-
   const headers = filterRequestHeaders(req.headers);
 
-  // Encaminhamento (útil p/ logs, rate-limit, auth, etc.)
   const reqUrl = new URL(req.url);
   headers.set('x-forwarded-proto', reqUrl.protocol.replace(':', ''));
   headers.set('x-forwarded-host', reqUrl.host);
@@ -104,11 +97,9 @@ async function proxy(req: Request, ctx: { params: Promise<Params> }) {
     cache: 'no-store',
   });
 
-  const outHeaders = filterResponseHeaders(upstream.headers);
-
   return new Response(upstream.body, {
     status: upstream.status,
-    headers: outHeaders,
+    headers: filterResponseHeaders(upstream.headers),
   });
 }
 

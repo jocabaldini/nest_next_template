@@ -1,9 +1,9 @@
 {
-  "name": "school-system",
+  "name": "nest_next_template",
   "author": "João Carlos de Souza Baldini",
   "private": true,
   "version": "0.1.0",
-  "description": "Multi-tenant school management system (web) built with NestJS, Next.js, Prisma, and Postgres.",
+  "description": "Full-stack template built with NestJS, Next.js, Prisma, and PostgreSQL.",
   "license": "MIT",
   "workspaces": [
     "apps/*",
