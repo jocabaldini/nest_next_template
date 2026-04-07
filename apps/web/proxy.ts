@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getLocaleFromRequest, LOCALE_COOKIE } from './lib/i18n';
 import { getApiUrl } from './lib/api/config';
 import { NEST_ROUTES } from './lib/api/routes';
+import { env } from './lib/env';
 
 const PUBLIC_PATHS = ['/login'];
 
 const ACCESS_COOKIE  = 'auth_token';
 const REFRESH_COOKIE = 'refresh_token';
-const ACCESS_MAX_AGE = Number(process.env.ACCESS_TOKEN_MAX_AGE ?? 604800); // fallback 7d
+const ACCESS_MAX_AGE = env.ACCESS_TOKEN_MAX_AGE;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
 
 function isPublicPath(pathname: string) {
