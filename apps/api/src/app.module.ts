@@ -3,13 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { I18nModule, AcceptLanguageResolver, HeaderResolver } from 'nestjs-i18n';
 import * as path from 'path';
-
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { throttlerConfig } from './throttler.config';
 import { envValidationSchema } from './config/env.validation';
+import { LoggerModule } from './common/logger/logger.module';
 
 @Module({
   imports: [
@@ -42,6 +42,7 @@ import { envValidationSchema } from './config/env.validation';
       inject: [ConfigService],
       useFactory: throttlerConfig,
     }),
+    LoggerModule,
     PrismaModule,
     AuthModule,
     UsersModule,
