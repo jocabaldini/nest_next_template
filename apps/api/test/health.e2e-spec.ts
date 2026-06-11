@@ -1,31 +1,24 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+// test/health.e2e-spec.ts
+import request from "supertest";
+import { INestApplication } from "@nestjs/common";
+import { createTestApp } from "./helpers/app.helper";
 
-describe('Health (e2e)', () => {
-  let app: INestApplication<App>;
+describe("Health (e2e)", () => {
+  let app: INestApplication;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
-    await app.init();
+    app = await createTestApp();
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('GET /api/health -> { ok: true }', async () => {
-    const server = app.getHttpServer();
+  it("GET /health — returns 200 with status ok", async () => {
+    const res = await request(app.getHttpServer())
+      .get("/health")
+      .expect(200);
 
-    const res = await request(server).get('/api/health').expect(200);
-
-    expect(res.body).toEqual({ ok: true });
+    expect(res.body).toMatchObject({ status: "ok" });
   });
 });

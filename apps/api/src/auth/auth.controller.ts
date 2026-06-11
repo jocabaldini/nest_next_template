@@ -14,6 +14,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(LoginThrottlerGuard)
   @Throttle({ login: { ttl: 60_000, limit: 5 } })
   login(@Body() dto: LoginDto, @I18nLang() lang: string) {
@@ -36,7 +37,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@Req() req: Request) {
-    return req.user;
+  me(@Req() req: Request, @I18nLang() lang: string) {
+    const user = req.user as { userId: string };
+    return this.auth.me(user.userId, lang);
   }
 }
