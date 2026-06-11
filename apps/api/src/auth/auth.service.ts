@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import type { StringValue } from 'ms';
 import { I18nService } from 'nestjs-i18n';
 import { UsersService } from '../users/users.service';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -25,19 +26,21 @@ export class AuthService {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException(invalidCredentials);
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    // Pass role so it is included in both access and refresh token payloads
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
     return tokens;
   }
 
   async refresh(refreshToken: string, lang: string) {
-    let payload: { sub: string; email: string };
+    let payload: { sub: string; email: string; role: Role };
 
     try {
-      payload = await this.jwt.verifyAsync<{ sub: string; email: string }>(refreshToken, {
-        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
-      });
+      payload = await this.jwt.verifyAsync<{ sub: string; email: string; role: Role }>(
+        refreshToken,
+        { secret: this.config.get<string>('JWT_REFRESH_SECRET') },
+      );
     } catch {
       throw new ForbiddenException(this.i18n.t('auth.refresh_token_invalid_expired', { lang }));
     }
@@ -47,7 +50,7 @@ export class AuthService {
 
     if (!user) throw new ForbiddenException(accessDenied);
 
-    const storedHash = user.refreshTokenHash as string | null;
+    const storedHash = user.refreshTokenHash;
     if (!storedHash) throw new ForbiddenException(accessDenied);
 
     const tokenMatch = await bcrypt.compare(refreshToken, storedHash);
@@ -55,7 +58,8 @@ export class AuthService {
       throw new ForbiddenException(this.i18n.t('auth.refresh_token_invalid', { lang }));
     }
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    // Re-read role from DB to always reflect the current value
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
     return tokens;
@@ -65,8 +69,9 @@ export class AuthService {
     await this.users.clearRefreshToken(userId);
   }
 
-  private async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+  private async generateTokens(userId: string, email: string, role: Role) {
+    // Include role in payload so RolesGuard can read it from req.user
+    const payload = { sub: userId, email, role };
 
     const accessSecret = this.config.get<string>('JWT_SECRET');
     const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');

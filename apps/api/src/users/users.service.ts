@@ -1,9 +1,25 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Role } from '@prisma/client';
+
+// Public fields returned in responses
+const PUBLIC_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
 @Injectable()
 export class UsersService {
@@ -18,29 +34,35 @@ export class UsersService {
       throw new ConflictException(this.i18n.t('users.email_in_use', { lang }));
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash: string = await bcrypt.hash(dto.password, 10);
 
     return this.prisma.user.create({
       data: {
         email: dto.email,
         name: dto.name,
         passwordHash,
+        role: (dto.role ?? 'USER') as Role,
       },
-      select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
+      select: PUBLIC_SELECT,
     });
   }
 
   async findAll() {
     return this.prisma.user.findMany({
-      select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
+      select: PUBLIC_SELECT,
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: string, lang: string) {
+  async findOne(id: string, lang: string, requesterId: string, requesterRole: Role) {
+    // A regular USER can only view their own profile
+    if (requesterRole === ('USER' as Role) && requesterId !== id) {
+      throw new ForbiddenException();
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
+      select: PUBLIC_SELECT,
     });
 
     if (!user) {
@@ -50,11 +72,22 @@ export class UsersService {
     return user;
   }
 
-  async findByEmailWithHash(email: string) {
+  async findByEmailWithHash(email: string): Promise<{
+    id: string;
+    email: string;
+    role: Role;
+    passwordHash: string;
+    refreshTokenHash: string | null;
+  } | null> {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<{
+    id: string;
+    email: string;
+    role: Role;
+    refreshTokenHash: string | null;
+  } | null> {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
@@ -72,7 +105,23 @@ export class UsersService {
     });
   }
 
-  async update(id: string, dto: UpdateUserDto, lang: string) {
+  async update(
+    id: string,
+    dto: UpdateUserDto,
+    lang: string,
+    requesterId: string,
+    requesterRole: Role,
+  ) {
+    // A regular USER can only update their own profile
+    if (requesterRole === ('USER' as Role) && requesterId !== id) {
+      throw new ForbiddenException();
+    }
+
+    // A regular USER cannot change their own role
+    if (requesterRole === ('USER' as Role) && dto.role) {
+      throw new ForbiddenException();
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(this.i18n.t('users.not_found', { lang }));
@@ -86,9 +135,10 @@ export class UsersService {
       data: {
         email: dto.email,
         name: dto.name,
+        role: dto.role,
         ...(passwordHash ? { passwordHash } : {}),
       },
-      select: { id: true, email: true, name: true, createdAt: true, updatedAt: true },
+      select: PUBLIC_SELECT,
     });
   }
 
