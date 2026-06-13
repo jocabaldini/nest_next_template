@@ -87,3 +87,4 @@ prisma/dev.db
 # Misc
 # =========================
 *.tsbuildinfo
+*:Zone.Identifier
