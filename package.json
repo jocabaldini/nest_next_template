@@ -48,11 +48,11 @@
   },
   "lint-staged": {
     "apps/api/**/*.ts": [
-      "eslint --fix --max-warnings=0",
+      "eslint --fix --max-warnings=0 --no-warn-ignored",
       "prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
-      "eslint --fix --max-warnings=0",
+      "eslint --fix --max-warnings=0 --no-warn-ignored -c apps/web/eslint.config.mjs",
       "prettier --write"
     ],
     "apps/**/*.{json,md}": [
