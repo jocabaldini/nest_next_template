@@ -1,5 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 /**
  * Returns a PrismaClient connected to the test database.
@@ -31,16 +31,16 @@ export async function resetTestUsers(prisma: PrismaClient): Promise<void> {
   await prisma.user.createMany({
     data: [
       {
-        email: "admin@test.com",
-        name: "Admin Test",
-        passwordHash: await bcrypt.hash("Admin@123", SALT_ROUNDS),
-        role: "ADMIN",
+        email: 'admin@test.com',
+        name: 'Admin Test',
+        passwordHash: await bcrypt.hash('Admin@123', SALT_ROUNDS),
+        role: 'ADMIN',
       },
       {
-        email: "user@test.com",
-        name: "User Test",
-        passwordHash: await bcrypt.hash("User@123", SALT_ROUNDS),
-        role: "USER",
+        email: 'user@test.com',
+        name: 'User Test',
+        passwordHash: await bcrypt.hash('User@123', SALT_ROUNDS),
+        role: 'USER',
       },
     ],
   });

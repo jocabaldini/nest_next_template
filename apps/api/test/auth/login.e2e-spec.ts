@@ -1,9 +1,9 @@
 // test/auth/login.e2e-spec.ts
-import request from "supertest";
-import { INestApplication } from "@nestjs/common";
-import { createTestApp } from "../helpers/app.helper";
+import request from 'supertest';
+import { INestApplication } from '@nestjs/common';
+import { createTestApp } from '../helpers/app.helper';
 
-describe("Auth — Login (e2e)", () => {
+describe('Auth — Login (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -14,10 +14,10 @@ describe("Auth — Login (e2e)", () => {
     await app.close();
   });
 
-  it("POST /auth/login — success with valid credentials", async () => {
+  it('POST /auth/login — success with valid credentials', async () => {
     const res = await request(app.getHttpServer())
-      .post("/auth/login")
-      .send({ email: "admin@test.com", password: "Admin@123" })
+      .post('/auth/login')
+      .send({ email: 'admin@test.com', password: 'Admin@123' })
       .expect(200);
 
     expect(res.body).toMatchObject({
@@ -26,24 +26,21 @@ describe("Auth — Login (e2e)", () => {
     });
   });
 
-  it("POST /auth/login — fails with wrong password", async () => {
+  it('POST /auth/login — fails with wrong password', async () => {
     await request(app.getHttpServer())
-      .post("/auth/login")
-      .send({ email: "admin@test.com", password: "WrongPassword" })
+      .post('/auth/login')
+      .send({ email: 'admin@test.com', password: 'WrongPassword' })
       .expect(401);
   });
 
-  it("POST /auth/login — fails with unknown email", async () => {
+  it('POST /auth/login — fails with unknown email', async () => {
     await request(app.getHttpServer())
-      .post("/auth/login")
-      .send({ email: "nobody@test.com", password: "Admin@123" })
+      .post('/auth/login')
+      .send({ email: 'nobody@test.com', password: 'Admin@123' })
       .expect(401);
   });
 
-  it("POST /auth/login — fails with missing fields", async () => {
-    await request(app.getHttpServer())
-      .post("/auth/login")
-      .send({})
-      .expect(400);
+  it('POST /auth/login — fails with missing fields', async () => {
+    await request(app.getHttpServer()).post('/auth/login').send({}).expect(400);
   });
 });

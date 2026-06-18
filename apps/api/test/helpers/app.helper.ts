@@ -12,15 +12,10 @@ export async function createTestApp(): Promise<INestApplication> {
 
   const app = moduleFixture.createNestApplication();
 
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
-  );
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
   const logger = app.get(LoggerService);
-  app.useGlobalFilters(
-    new HttpExceptionFilter(logger),
-    new I18nValidationExceptionFilter(),
-  );
+  app.useGlobalFilters(new HttpExceptionFilter(logger), new I18nValidationExceptionFilter());
 
   await app.init();
   return app;

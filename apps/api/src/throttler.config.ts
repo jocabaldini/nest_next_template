@@ -11,7 +11,7 @@ export function throttlerConfig(config: ConfigService): ThrottlerModuleOptions {
 
   if (redisUrl) {
     const client: RedisType = new Redis(redisUrl);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
     storage = new ThrottlerStorageRedisService(client) as unknown as ThrottlerStorage;
   }
 

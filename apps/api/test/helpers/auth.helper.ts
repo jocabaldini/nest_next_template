@@ -1,5 +1,5 @@
-import request from "supertest";
-import { INestApplication } from "@nestjs/common";
+import request from 'supertest';
+import { INestApplication } from '@nestjs/common';
 
 export interface AuthTokens {
   accessToken: string;
@@ -13,10 +13,10 @@ export interface AuthTokens {
 export async function loginAs(
   app: INestApplication,
   email: string,
-  password: string
+  password: string,
 ): Promise<AuthTokens> {
   const res = await request(app.getHttpServer())
-    .post("/auth/login")
+    .post('/auth/login')
     .send({ email, password })
     .expect(200);
 
@@ -27,8 +27,6 @@ export async function loginAs(
 }
 
 /** Pre-configured helpers for the two seeded test users */
-export const loginAsAdmin = (app: INestApplication) =>
-  loginAs(app, "admin@test.com", "Admin@123");
+export const loginAsAdmin = (app: INestApplication) => loginAs(app, 'admin@test.com', 'Admin@123');
 
-export const loginAsUser = (app: INestApplication) =>
-  loginAs(app, "user@test.com", "User@123");
+export const loginAsUser = (app: INestApplication) => loginAs(app, 'user@test.com', 'User@123');

@@ -40,9 +40,6 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-
-      // Unhandled promises should be fixed, but warn to avoid blocking CI on
-      // patterns like `app.listen()` in main.ts that are intentionally fire-and-forget.
       '@typescript-eslint/no-floating-promises': 'warn',
 
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
@@ -55,6 +52,16 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
+  },
+  {
+    // Test files: INestApplication.getHttpServer() returns `any` — safe to ignore
+    // in tests since supertest handles the type internally.
+    files: ['test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
     },
   },
 );

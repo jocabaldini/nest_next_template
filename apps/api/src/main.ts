@@ -70,4 +70,4 @@ async function bootstrap() {
   console.log(`[API] listening on :${port} (${process.env.NODE_ENV ?? 'undefined'})`);
 }
 
-bootstrap();
+void bootstrap();
