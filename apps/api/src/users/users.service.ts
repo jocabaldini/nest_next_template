@@ -41,13 +41,13 @@ export class UsersService {
         email: dto.email,
         name: dto.name,
         passwordHash,
-        role: (dto.role ?? 'USER') as Role,
+        role: dto.role ?? 'USER',
       },
       select: PUBLIC_SELECT,
     });
   }
 
-  async findAll() {
+  findAll() {
     return this.prisma.user.findMany({
       select: PUBLIC_SELECT,
       orderBy: { createdAt: 'desc' },
@@ -72,7 +72,7 @@ export class UsersService {
     return user;
   }
 
-  async findByEmailWithHash(email: string): Promise<{
+  findByEmailWithHash(email: string): Promise<{
     id: string;
     email: string;
     role: Role;
@@ -82,7 +82,7 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findById(id: string): Promise<{
+  findById(id: string): Promise<{
     id: string;
     email: string;
     role: Role;
@@ -91,14 +91,14 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async updateRefreshToken(id: string, refreshTokenHash: string) {
+  updateRefreshToken(id: string, refreshTokenHash: string) {
     return this.prisma.user.update({
       where: { id },
       data: { refreshTokenHash },
     });
   }
 
-  async clearRefreshToken(id: string) {
+  clearRefreshToken(id: string) {
     return this.prisma.user.update({
       where: { id },
       data: { refreshTokenHash: null },
