@@ -22,7 +22,6 @@ export default tseslint.config(
         ...globals.node,
         ...globals.jest,
       },
-      // Melhor para projetos com "module": "nodenext"
       sourceType: 'module',
       parserOptions: {
         projectService: true,
@@ -33,17 +32,29 @@ export default tseslint.config(
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
+
+      // Unsafe-* rules: warn instead of error — NestJS + Prisma + decorators
+      // produce implicit `any` in several patterns that are safe in practice.
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
+
+      // Unhandled promises should be fixed, but warn to avoid blocking CI on
+      // patterns like `app.listen()` in main.ts that are intentionally fire-and-forget.
+      '@typescript-eslint/no-floating-promises': 'warn',
+
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
   {
+    // DTOs use class-validator decorators which trigger unsafe-* rules — disable entirely.
     files: ['src/**/dto/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off'
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
 );

@@ -42,9 +42,9 @@ jobs:
       PORT: 3001
       DATABASE_URL: postgresql://postgres:postgres@localhost:5433/app_test?schema=public
       DIRECT_URL: postgresql://postgres:postgres@localhost:5433/app_test?schema=public
-      JWT_SECRET: ci-jwt-secret
+      JWT_SECRET: ci-jwt-secret-at-least-32-characters-long
       JWT_EXPIRES_IN: 1d
-      JWT_REFRESH_SECRET: ci-jwt-refresh-secret
+      JWT_REFRESH_SECRET: ci-jwt-refresh-secret-at-least-32-characters-long
       JWT_REFRESH_EXPIRES_IN: 30d
       REDIS_URL: redis://localhost:6379
       CORS_ORIGIN: http://localhost:3000
