@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { I18nModule, AcceptLanguageResolver, HeaderResolver } from 'nestjs-i18n';
@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module';
 import { throttlerConfig } from './throttler.config';
 import { envValidationSchema } from './config/env.validation';
 import { LoggerModule } from './common/logger/logger.module';
+import { RequestContextMiddleware } from './common/request-context/request-context.middleware';
 
 @Module({
   imports: [
@@ -49,4 +50,11 @@ import { LoggerModule } from './common/logger/logger.module';
   ],
   controllers: [HealthController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // Applies RequestContextMiddleware to all routes.
+  // This must run before any other middleware to ensure requestId is available
+  // throughout the entire request lifecycle.
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}

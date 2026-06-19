@@ -1,19 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
+import type { LoggerService as NestLoggerService } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ILogTransport, LogEntry, LogLevel } from './logger.interface';
+import { ILogTransport, LOG_TRANSPORTS, LogEntry, LogLevel } from './logger.interface';
 import { ConsoleTransport } from './transports/console.transport';
+import { getRequestContext } from '../request-context/request-context';
 
+// Implements NestJS's LoggerService interface so it can replace the framework's
+// built-in logger via app.useLogger() — making all NestJS internal logs
+// (bootstrap, guards, interceptors, etc) go through this structured logger.
 @Injectable()
-export class LoggerService {
+export class LoggerService implements NestLoggerService {
   private readonly transports: ILogTransport[];
   private readonly isDev: boolean;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    // Inject registered transports — falls back to ConsoleTransport if none provided.
+    // Use LOG_TRANSPORTS token to register additional transports in LoggerModule.
+    @Optional() @Inject(LOG_TRANSPORTS) transports?: ILogTransport[],
+  ) {
     this.isDev = this.config.get<string>('NODE_ENV') === 'development';
-
-    // Register transports here — add DatadogTransport, LokiTransport, etc in the future
-    this.transports = [new ConsoleTransport()];
+    this.transports = transports ?? [new ConsoleTransport()];
   }
+
+  // ─── Public API (used in application code) ──────────────────────────────────
 
   info(message: string, context?: Record<string, unknown>): void {
     this.emit('info', message, undefined, context);
@@ -27,17 +37,42 @@ export class LoggerService {
     this.emit('error', message, error, context);
   }
 
-  // Builds the log entry and dispatches it to all registered transports
+  // ─── NestJS LoggerService interface ─────────────────────────────────────────
+  // These methods allow NestJS itself to route its internal logs through here.
+
+  log(message: unknown, _context?: string): void {
+    this.emit('info', String(message));
+  }
+
+  debug(message: unknown, _context?: string): void {
+    this.emit('debug', String(message));
+  }
+
+  verbose(message: unknown, _context?: string): void {
+    this.emit('verbose', String(message));
+  }
+
+  fatal(message: unknown, _context?: string): void {
+    this.emit('error', String(message));
+  }
+
+  // ─── Internals ───────────────────────────────────────────────────────────────
+
+  // Builds the log entry and dispatches it to all registered transports.
+  // Automatically includes the requestId from AsyncLocalStorage when available.
   private emit(
     level: LogLevel,
     message: string,
     error?: unknown,
     context?: Record<string, unknown>,
   ): void {
+    const requestId = getRequestContext()?.requestId;
+
     const entry: LogEntry = {
       level,
       message,
       timestamp: new Date().toISOString(),
+      ...(requestId ? { requestId } : {}),
     };
 
     if (context) entry.context = context;
@@ -48,7 +83,7 @@ export class LoggerService {
     }
   }
 
-  // Extracts name, message and stack (dev only) from any thrown value
+  // Extracts name, message and stack (dev only) from any thrown value.
   private serializeError(error: unknown): LogEntry['error'] {
     if (error instanceof Error) {
       return {

@@ -21,7 +21,10 @@ function parseCorsOrigins(value: string | undefined): string[] {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // Suppress NestJS default logger during bootstrap — our logger takes over below
+    bufferLogs: true,
+  });
 
   app.set('trust proxy', 1);
   app.use(helmet());
@@ -38,7 +41,7 @@ async function bootstrap() {
     },
     credentials: false, // Bearer token — credentials not needed
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Request-ID'],
   });
 
   // Replaces the default ValidationPipe — keeps whitelist/forbid/transform
@@ -51,8 +54,11 @@ async function bootstrap() {
     }),
   );
 
-  // Resolve LoggerService from the DI container
-  const logger = app.get(LoggerService); // add
+  // Resolve LoggerService from the DI container and register as the framework logger.
+  // From this point, all NestJS internal logs go through our structured logger.
+  const logger = app.get(LoggerService);
+  app.useLogger(logger);
+  app.flushLogs();
 
   // Order matters: NestJS applies filters last-to-first.
   // I18nValidationExceptionFilter runs first (most specific — DTO validation errors).
@@ -67,7 +73,7 @@ async function bootstrap() {
   }
 
   await app.listen(port, '0.0.0.0');
-  console.log(`[API] listening on :${port} (${process.env.NODE_ENV ?? 'undefined'})`);
+  logger.info(`API listening on :${port}`, { env: process.env.NODE_ENV ?? 'undefined' });
 }
 
 void bootstrap();

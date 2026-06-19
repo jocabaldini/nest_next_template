@@ -32,7 +32,11 @@ export default tseslint.config(
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-
+      
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       // Unsafe-* rules: warn instead of error — NestJS + Prisma + decorators
       // produce implicit `any` in several patterns that are safe in practice.
       '@typescript-eslint/no-unsafe-member-access': 'warn',
@@ -41,7 +45,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-floating-promises': 'warn',
-
+      
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },

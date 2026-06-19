@@ -14,7 +14,8 @@ const PRISMA_ERROR_MAP: Record<string, { status: number; message: string }> = {
 interface ErrorBody {
   statusCode: number;
   error: string;
-  message: string;
+  // A single string for most errors; an array when multiple validation messages are present
+  message: string | string[];
 }
 
 @Catch()
@@ -45,14 +46,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const res = exception.getResponse();
 
-      let message: string;
+      let message: string | string[];
 
       if (typeof res === 'string') {
         message = res;
       } else if (typeof res === 'object' && res !== null && 'message' in res) {
         const raw = (res as Record<string, unknown>)['message'];
         if (Array.isArray(raw)) {
-          message = typeof raw[0] === 'string' ? raw[0] : String(raw[0]);
+          // Return all validation messages instead of only the first
+          message = raw.map((item) => (typeof item === 'string' ? item : String(item)));
         } else {
           message = typeof raw === 'string' ? raw : String(raw);
         }
