@@ -2,10 +2,7 @@ import { getApiUrl } from '@/lib/api/config';
 
 type Params = { path?: string[] };
 
-const RESERVED_PREFIXES = new Set([
-  'internal',
-  'webhooks',
-]);
+const RESERVED_PREFIXES = new Set(['internal', 'webhooks']);
 
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
@@ -74,7 +71,7 @@ async function proxy(req: Request, ctx: { params: Promise<Params> }) {
         ok: false,
         error: `Path reserved for Next.js: /api/${path[0]}`,
       }),
-      { status: 404, headers: { 'content-type': 'application/json; charset=utf-8' } }
+      { status: 404, headers: { 'content-type': 'application/json; charset=utf-8' } },
     );
   }
 

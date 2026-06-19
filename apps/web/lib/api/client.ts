@@ -19,7 +19,9 @@ async function apiFetch(path: string, opts: ApiOptions = {}) {
 
   if (!res.ok) {
     const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => '');
-    throw new Error(`API ${res.status} ${res.statusText}: ${typeof payload === 'string' ? payload : JSON.stringify(payload)}`);
+    throw new Error(
+      `API ${res.status} ${res.statusText}: ${typeof payload === 'string' ? payload : JSON.stringify(payload)}`,
+    );
   }
 
   return isJson ? res.json() : res.text();

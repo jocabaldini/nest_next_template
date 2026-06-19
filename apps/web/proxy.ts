@@ -6,19 +6,17 @@ import { env } from './lib/env';
 
 const PUBLIC_PATHS = ['/login'];
 
-const ACCESS_COOKIE  = 'auth_token';
+const ACCESS_COOKIE = 'auth_token';
 const REFRESH_COOKIE = 'refresh_token';
 const ACCESS_MAX_AGE = env.ACCESS_TOKEN_MAX_AGE;
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 7;
 
 function isPublicPath(pathname: string) {
-  return PUBLIC_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`)
-  );
+  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
 async function tryRefresh(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<{ accessToken: string; refreshToken: string } | null> {
   const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
   if (!refreshToken) return null;
@@ -46,7 +44,7 @@ function applyTokensToResponse(
   response: NextResponse,
   accessToken: string,
   refreshToken: string,
-  isProd: boolean
+  isProd: boolean,
 ) {
   const base = {
     httpOnly: true,
@@ -76,7 +74,7 @@ export async function proxy(req: NextRequest) {
   const isProd = process.env.NODE_ENV === 'production';
   const isPublic = isPublicPath(pathname);
 
-  const accessToken  = req.cookies.get(ACCESS_COOKIE)?.value;
+  const accessToken = req.cookies.get(ACCESS_COOKIE)?.value;
   const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
 
   // Usuário autenticado tentando acessar rota pública (ex: /login)
@@ -121,5 +119,5 @@ function setLocaleCookie(req: NextRequest, response: NextResponse) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)',],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
 };

@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers';
 
-const ACCESS_COOKIE   = 'auth_token';
-const REFRESH_COOKIE  = 'refresh_token';
+const ACCESS_COOKIE = 'auth_token';
+const REFRESH_COOKIE = 'refresh_token';
 
-const ACCESS_MAX_AGE  = Number(process.env.ACCESS_TOKEN_MAX_AGE ?? 604800); // default 7d
+const ACCESS_MAX_AGE = Number(process.env.ACCESS_TOKEN_MAX_AGE ?? 604800); // default 7d
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 export async function setSession(accessToken: string, refreshToken: string) {
