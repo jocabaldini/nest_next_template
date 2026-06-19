@@ -43,7 +43,7 @@ describe('Auth — Me (e2e)', () => {
       email: 'user@test.com',
       role: 'USER',
     });
-    // Não assertar "name" pois outros testes podem ter alterado
+    // Skip asserting "name" — other tests may have updated it
     expect(res.body).toHaveProperty('id');
     expect(res.body).not.toHaveProperty('passwordHash');
     expect(res.body).not.toHaveProperty('refreshTokenHash');

@@ -82,14 +82,14 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
-  // Rota protegida sem access token
+  // Protected route with no access token
   if (!isPublic && !accessToken) {
-    // Tenta renovar via refresh token antes de redirecionar
+    // Attempt to renew via refresh token before redirecting to login
     if (refreshToken) {
       const tokens = await tryRefresh(req);
 
       if (tokens) {
-        // Renovou com sucesso — segue para a página com os novos cookies
+        // Renewed successfully — continue to the page with updated cookies
         const response = NextResponse.next();
         applyTokensToResponse(response, tokens.accessToken, tokens.refreshToken, isProd);
         setLocaleCookie(req, response);
@@ -97,7 +97,7 @@ export async function proxy(req: NextRequest) {
       }
     }
 
-    // Refresh inválido ou inexistente — limpa e redireciona
+    // Invalid or missing refresh token — clear cookies and redirect to login
     const response = NextResponse.redirect(new URL('/login', req.url));
     clearTokensFromResponse(response);
     return response;
